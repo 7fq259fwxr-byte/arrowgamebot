@@ -10,6 +10,51 @@ import time
 import random
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
+import requests
+
+# URL вашего сервера на PythonAnywhere
+WEBHOOK_URL = "https://malollas-byte.pythonanywhere.com/api/telegram"
+
+@app.route('/api/telegram', methods=['POST'])
+def telegram_webhook():
+    """Этот эндпоинт принимает сообщения от самого Telegram"""
+    update = request.get_json()
+    
+    if "message" in update and "text" in update["message"]:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"]["text"]
+        
+        if text == "/start":
+            send_start_button(chat_id)
+            
+    return jsonify({"status": "ok"})
+
+def send_start_button(chat_id):
+    """Отправляет сообщение с кнопкой запуска игры"""
+    # Ссылка на ваш сайт на GitHub
+    game_url = "https://7fq259fwxr-byte.github.io/arrowgame/"
+    
+    method = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": "🎮 Добро пожаловать в Arrows! Нажми кнопку ниже, чтобы начать играть:",
+        "reply_markup": {
+            "inline_keyboard": [[
+                {
+                    "text": "Играть сейчас",
+                    "web_app": {"url": game_url}
+                }
+            ]]
+        }
+    }
+    requests.post(method, json=payload)
+
+# Эту функцию нужно вызвать ОДИН РАЗ, чтобы сказать Telegram, куда слать сообщения
+@app.route('/set_webhook')
+def set_webhook():
+    s = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url={WEBHOOK_URL}")
+    return "Webhook set!"
+
 
 # ========== НАСТРОЙКИ ==========
 app = Flask(__name__)
